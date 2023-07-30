@@ -2,20 +2,23 @@ import os
 import sqlite3
 from aiogram import Bot, Dispatcher
 from aiogram import types
+from aiogram.dispatcher.filters import state
 from aiogram.utils import executor
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, message
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
 import message_text
 
-token = os.getenv("TELEGRAM_BOT_TOKEN")
-allowed_id = os.getenv("ALLOWED_ID")
+token = os.getenv("TELEGRAM_BOT_TOKEN") # Telegram token
+allowed_id = os.getenv("ALLOWED_ID") # Telegram user token
 
 class Form(StatesGroup):
-    user_id = State()
+    name = State()
+    materials = State()
+    done = State()
 
-if not token or allowed_id:
+if not token or not allowed_id:
     exit("Specify your TELEGRAM_BOT_TOKEN and ALLOWED_ID env variable")
 
 bot = Bot(token=token)
@@ -61,7 +64,7 @@ async def start_command(message: types.Message):
 
     if message.from_user.id == int(allowed_id):
 
-        await message.answer(text=f'{message_text.START_TEXT_ALLOWED}\
+        msg = await message.answer(text=f'{message_text.START_TEXT_ALLOWED}\
 {courses}',
                              reply_markup=keyboard_start)
 
@@ -73,11 +76,51 @@ async def start_command(message: types.Message):
 @dp.callback_query_handler()
 async def button_proccess(call: types.CallbackQuery):
 
+    # Course add
     if call.data == "course_add":
 
-        await bot.send_message(text="Вы нажали кнопку добавления события",
-                               chat_id=call.message.chat.id)
+        await Form.name.set()
+        await bot.edit_message_text(message_id=call.message.message_id,
+                                    text=message_text.ADD_TEXT_NAME,
+                                    chat_id=call.message.chat.id)
 
+
+        @dp.message_handler(state=Form.name)
+        async def proccess_name(message: types.Message, state: FSMContext):
+
+            async with state.proxy() as data:
+                data['name'] = message.text
+
+            await Form.materials.set()
+            await bot.send_message(text=message_text.ADD_TEXT_MATERIALS,
+                                   chat_id=call.message.chat.id)
+
+
+        @dp.message_handler(state=Form.done)
+        async def proccess_done(message: types.Message, state: FSMContext):
+
+            async with state.proxy() as data:
+                data['materials'] = message.text
+
+            await Form.done.set()
+            await bot.send_message(text=message_text.ADD_TEXT_DONE,
+                                   chat_id=call.message.chat.id)
+
+            async with state.proxy() as data:
+                data['done'] = message.text
+
+            await state.finish()
+
+            await bot.send_message(text=message_text.ADD_TEXT_COMPLETE,
+                                   chat_id=call.message.chat.id)
+            
+            cursor.execute(f'INSERT INTO')
+            # TODO: Сделать указание платформы для добавления новых курсов.
+            # Можно попробовать сделать цикл добавления кнопок кливиатуры
+            # С платформами.
+
+
+    # Course delete
     elif call.data == "course_delete":
 
         await bot.send_message(text="Вы нажали кнопку удаления события",
