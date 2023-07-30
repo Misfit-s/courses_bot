@@ -97,16 +97,19 @@ async def button_proccess(call: types.CallbackQuery):
             await bot.send_message(text=message_text.ADD_TEXT_MATERIALS,
                                    chat_id=call.message.chat.id)
 
-
-        @dp.message_handler(state=Form.done)
-        async def proccess_done(message: types.Message, state: FSMContext):
-
+        @dp.message_handler(state=Form.materials)
+        async def proccess_materials(message: types.Message,
+                                     state: FSMContext):
             async with state.proxy() as data:
                 data['materials'] = message.text
 
             await Form.done.set()
             await bot.send_message(text=message_text.ADD_TEXT_DONE,
                                    chat_id=call.message.chat.id)
+
+
+        @dp.message_handler(state=Form.done)
+        async def proccess_done(message: types.Message, state: FSMContext):
 
             async with state.proxy() as data:
                 data['done'] = message.text
