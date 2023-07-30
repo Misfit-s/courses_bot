@@ -4,10 +4,11 @@ from aiogram import Bot, Dispatcher
 from aiogram import types
 from aiogram.dispatcher.filters import state
 from aiogram.utils import executor
-from aiogram.types import InlineKeyboardButton, message
+from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.dispatcher import FSMContext
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext, storage
 import message_text
 
 token = os.getenv("TELEGRAM_BOT_TOKEN") # Telegram token
@@ -22,7 +23,8 @@ if not token or not allowed_id:
     exit("Specify your TELEGRAM_BOT_TOKEN and ALLOWED_ID env variable")
 
 bot = Bot(token=token)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
 conn = sqlite3.connect(os.path.join("courses.db"))
 cursor = conn.cursor()
