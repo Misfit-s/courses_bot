@@ -74,11 +74,39 @@ async def start_command(message: types.Message):
 
 
 @dp.callback_query_handler()
-async def button_proccess(call: types.CallbackQuery):
+async def button_proccess(call: types.CallbackQuery, state: FSMContext):
+
+    await Form.platform.set()
+
+    async with state.proxy() as data:
+        data['platform'] = call.data.replace("_btn", "")
+
+    keyboard_platform = InlineKeyboardMarkup(row_width=1)
+
+    add_course_btn = InlineKeyboardButton(
+            text="Добавить курс",
+            url='',
+            callback_data='add_course',
+            switch_inline_query='',
+            switch_inline_query_current_chat='',
+            pay=False,
+            )
+
+    delete_course_btn = InlineKeyboardButton(
+            text="Удалить курс",
+            url='',
+            callback_data='delete_couse',
+            switch_inline_query='',
+            switch_inline_query_current_chat='',
+            pay=False,
+            )
+
+    keyboard_platform.add(add_course_btn, delete_course_btn)
 
     if call.data.find("_btn") != -1:
-        await bot.send_message(text='test',
-                               chat_id=call.from_user.id)
+        await bot.send_message(text=f'{data["platform"]}',
+                               chat_id=call.from_user.id,
+                               reply_markup=keyboard_platform)
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
