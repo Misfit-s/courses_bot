@@ -18,6 +18,7 @@ class Form(StatesGroup):
     name = State()
     materials = State()
     done = State()
+    platform = State()
 
 
 if not token or not allowed_id:
@@ -32,26 +33,6 @@ cursor = conn.cursor()
 
 keyboard_start = InlineKeyboardMarkup(row_width=1)
 
-addCourseBtn = InlineKeyboardButton(
-    text="Добавить курс",
-    url="",
-    switch_inline_query="",
-    switch_inline_query_current_chat="",
-    pay=False,
-    callback_data="course_add",
-)
-
-deleteCourseBtn = InlineKeyboardButton(
-    text="Удалить курс",
-    url="",
-    switch_inline_query="",
-    switch_inline_query_current_chat="",
-    pay=False,
-    callback_data="course_delete",
-)
-
-keyboard_start.add(addCourseBtn, deleteCourseBtn)
-
 
 @dp.message_handler(commands=["start", "help"])
 async def start_command(message: types.Message):
@@ -65,6 +46,18 @@ async def start_command(message: types.Message):
 
     for table in cursor.fetchall():
         tables += table
+
+    for table in tables:
+        keyboard_start.add(
+                InlineKeyboardButton(
+                    text=table,
+                    url='',
+                    switch_inline_query='',
+                    switch_inline_query_current_chat='',
+                    pay=False,
+                    callback_data=f"{table}_btn"
+                    )
+                )
 
     for i in tables:
         cursor.execute(f"""SELECT name FROM {i}""")
@@ -82,61 +75,7 @@ async def start_command(message: types.Message):
 
 @dp.callback_query_handler()
 async def button_proccess(call: types.CallbackQuery):
-    # Course add
-    if call.data == "course_add":
-        await Form.name.set()
-        await bot.edit_message_text(
-            message_id=call.message.message_id,
-            text=message_text.ADD_TEXT_NAME,
-            chat_id=call.message.chat.id,
-        )
-
-        @dp.message_handler(state=Form.name)
-        async def proccess_name(message: types.Message, state: FSMContext):
-            async with state.proxy() as data:
-                data["name"] = message.text
-
-            await Form.materials.set()
-            await bot.send_message(
-                text=message_text.ADD_TEXT_MATERIALS,
-                chat_id=call.message.chat.id
-            )
-
-        @dp.message_handler(state=Form.materials)
-        async def proccess_materials(message: types.Message,
-                                     state: FSMContext):
-            async with state.proxy() as data:
-                data["materials"] = message.text
-
-            await Form.done.set()
-            await bot.send_message(
-                text=message_text.ADD_TEXT_DONE, chat_id=call.message.chat.id
-            )
-
-        @dp.message_handler(state=Form.done)
-        async def proccess_done(message: types.Message, state: FSMContext):
-            async with state.proxy() as data:
-                data["done"] = message.text
-
-            await state.finish()
-
-            await bot.send_message(
-                text=message_text.ADD_TEXT_COMPLETE,
-                chat_id=call.message.chat.id
-            )
-
-            cursor.execute(f"INSERT INTO")
-            # TODO: Сделать указание платформы для добавления новых курсов.
-            # Можно попробовать сделать цикл добавления кнопок кливиатуры
-            # С платформами.
-
-    # Course delete
-    elif call.data == "course_delete":
-        await bot.send_message(
-            text="Вы нажали кнопку удаления события",
-            chat_id=call.message.chat.id
-        )
-
+    pass
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
