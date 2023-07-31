@@ -1,5 +1,5 @@
-START_TEXT_ALLOWED = """
-Привет! 
+START_ALLOWED = """
+Привет!
 """
 START_TEXT_NOT_ALLOWED = """
 К сожалению, этот бот может использоваться только своим создателем ;c
