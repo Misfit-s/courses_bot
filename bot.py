@@ -75,7 +75,10 @@ async def start_command(message: types.Message):
 
 @dp.callback_query_handler()
 async def button_proccess(call: types.CallbackQuery):
-    pass
+
+    if call.data.find("_btn") != -1:
+        await bot.send_message(text='test',
+                               chat_id=call.from_user.id)
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
