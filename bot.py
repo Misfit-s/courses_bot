@@ -1,20 +1,23 @@
 import os
 import sqlite3
+
 from aiogram import Bot, Dispatcher
 from aiogram import types
 from aiogram.utils import executor
-from aiogram.types import InlineKeyboardButton
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, chat
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
+
 import message_text
+import button
 
 token = os.getenv("TELEGRAM_BOT_TOKEN")  # Telegram token
 allowed_id = os.getenv("ALLOWED_ID")  # Telegram user token
 
 
 class Form(StatesGroup):
+    """ """
     name = State()
     materials = State()
     done = State()
@@ -48,16 +51,7 @@ async def start_command(message: types.Message):
         tables += table
 
     for table in tables:
-        keyboard_start.add(
-                InlineKeyboardButton(
-                    text=table,
-                    url='',
-                    switch_inline_query='',
-                    switch_inline_query_current_chat='',
-                    pay=False,
-                    callback_data=f"{table}_btn"
-                    )
-                )
+        keyboard_start.add(button.create_button(table, f"{table}_btn"))
 
     for i in tables:
         cursor.execute(f"""SELECT name FROM {i}""")
@@ -73,40 +67,36 @@ async def start_command(message: types.Message):
         await message.answer(text=message_text.START_TEXT_NOT_ALLOWED)
 
 
-@dp.callback_query_handler()
-async def button_proccess(call: types.CallbackQuery, state: FSMContext):
+@dp.callback_query_handler(lambda c: c.data.endswith("_btn"))
+async def button_platform_proccess(call: types.CallbackQuery,
+                                   state: FSMContext):
 
-    await Form.platform.set()
+    platform = call.data.replace("_btn", "")
+    await state.update_data(platform=platform)
 
-    async with state.proxy() as data:
-        data['platform'] = call.data.replace("_btn", "")
+    platform_keyboard = InlineKeyboardMarkup()
 
-    keyboard_platform = InlineKeyboardMarkup(row_width=1)
-
-    add_course_btn = InlineKeyboardButton(
-            text="Добавить курс",
-            url='',
-            callback_data='add_course',
-            switch_inline_query='',
-            switch_inline_query_current_chat='',
-            pay=False,
+    platform_keyboard.add(
+            button.create_button("Добавить курс", "course_add"),
+            button.create_button("Удалить курс", "course_del")
             )
 
-    delete_course_btn = InlineKeyboardButton(
-            text="Удалить курс",
-            url='',
-            callback_data='delete_couse',
-            switch_inline_query='',
-            switch_inline_query_current_chat='',
-            pay=False,
+    await bot.send_message(
+            text="test",
+            chat_id=call.message.chat.id,
+            reply_markup=platform_keyboard,
             )
 
-    keyboard_platform.add(add_course_btn, delete_course_btn)
 
-    if call.data.find("_btn") != -1:
-        await bot.send_message(text=f'{data["platform"]}',
-                               chat_id=call.from_user.id,
-                               reply_markup=keyboard_platform)
+@dp.callback_query_handler(lambda c: c.data.startswith("course_"))
+async def button_course_proccess(call: types.CallbackQuery,
+                                 state: FSMContext):
+    if call.data == "course_add":
+        print("Добавить курс")
+
+    elif call.data == "course_del":
+        print("Удалить курс")
+
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
